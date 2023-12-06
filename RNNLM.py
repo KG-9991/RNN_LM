@@ -26,7 +26,7 @@ class Config(object):
   embed_size = 50
   hidden_size = 100
   num_steps = 10 # RNN is unfolded into 'num_steps' time steps for training
-  max_epochs = 1 # the number of max epoch
+  max_epochs = 30 # the number of max epoch
   early_stopping = 2
   dropout = 0.1
   lr = 0.01
