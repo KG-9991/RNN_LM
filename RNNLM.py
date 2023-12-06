@@ -346,7 +346,7 @@ def test_RNNLM():
   while starting_text:
     print(' '.join(generate_sentence(
        gen_model, gen_config,vocab, starting_text=starting_text, temp=1.0)))
-    starting_text = input('> ')
+    starting_text = 'in palo alto'
 
 if __name__ == "__main__":
   os.environ['CUDA_VISIBLE_DEVICES'] = '0'
