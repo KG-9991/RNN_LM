@@ -27,9 +27,9 @@ class Config(object):
   hidden_size = 100
   num_steps = 10 # RNN is unfolded into 'num_steps' time steps for training
   max_epochs = 30 # the number of max epoch
-  early_stopping = 2
+  early_stopping = 7
   dropout = 0.1
-  lr = 0.01
+  lr = 0.1
   vocab_size= 0
   ### END YOUR CODE
 
