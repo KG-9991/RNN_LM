@@ -147,6 +147,7 @@ class RNNLM_Model(nn.Module):
     """
     ### YOUR CODE HERE
     outputs = []
+    rnn_outputs = [x.cuda() for x in rnn_outputs]
     for i in range(self.config.num_steps):
       output = torch.mm(rnn_outputs[i],self.U + self.b2)
       output = torch.nn.functional.softmax(output)
