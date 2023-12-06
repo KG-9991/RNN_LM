@@ -90,7 +90,7 @@ class RNNLM_Model(nn.Module):
     embed_mat = []
     for i in range(self.config.num_steps):
       extract_vec_step = input_x[:,curr_step]
-      result_vec_step = torch.empty(size=(self.config.batch_size,self.config.embed_size))
+      result_vec_step = torch.empty(size=(self.config.batch_size,self.config.embed_size)).cuda()
       for j in range(self.config.batch_size):
         result_vec_step[j] = self.embedding(extract_vec_step[i])
       embed_mat.append(result_vec_step)
