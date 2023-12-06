@@ -44,12 +44,12 @@ class RNNLM_Model(nn.Module):
     ### Define the Embedding layer. Hint: check nn.Embedding
     self.embedding = nn.Embedding(config.vocab_size, config.embed_size)
     ### Define the H, I, b1 in HW4. Hint: check nn.Parameter
-    self.H = nn.Parameter(torch.Tensor(config.hidden_size, config.hidden_size))
-    self.I = nn.Parameter(torch.Tensor(config.embed_size, config.hidden_size))
-    self.b1 = nn.Parameter(torch.Tensor(config.hidden_size))
+    self.H = nn.Parameter(torch.Tensor(config.hidden_size, config.hidden_size).cuda())
+    self.I = nn.Parameter(torch.Tensor(config.embed_size, config.hidden_size).cuda())
+    self.b1 = nn.Parameter(torch.Tensor(config.hidden_size).cuda())
     ### Define the projection layer, U, b2 in HW4
-    self.U = nn.Parameter(torch.Tensor(config.hidden_size, config.vocab_size))
-    self.b2 = nn.Parameter(torch.Tensor(config.vocab_size))
+    self.U = nn.Parameter(torch.Tensor(config.hidden_size, config.vocab_size).cuda())
+    self.b2 = nn.Parameter(torch.Tensor(config.vocab_size).cuda())
     ## Define the input dropout and output dropout.
     self.input_drop = nn.Dropout(config.dropout)
     self.output_drop = nn.Dropout(config.dropout)
