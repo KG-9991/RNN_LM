@@ -161,7 +161,7 @@ class RNNLM_Model(nn.Module):
         Hint: If you are using GPU, the init_hidden should be attached to cuda.
     """
     ### YOUR CODE HERE
-    init_state = torch.zeros(self.config.batch_size, self.config.hidden_size)
+    init_state = torch.zeros(self.config.batch_size, self.config.hidden_size).cuda()
     ### END YOUR CODE
     return init_state
     
