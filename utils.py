@@ -44,7 +44,7 @@ def calculate_perplexity(log_probs):
   return np.exp(perp / len(log_probs))
 
 def get_ptb_dataset(dataset='train'):
-  fn = '/gpfs/scratch/kgayadhankar/RNN_LM/data/ptb/ptb.{}.txt'
+  fn = './data/ptb/ptb.{}.txt'
   for line in open(fn.format(dataset)):
     for word in line.split():
       yield word

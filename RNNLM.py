@@ -24,12 +24,12 @@ class Config(object):
   ### YOUR CODE HERE
   batch_size = 64
   embed_size = 50
-  hidden_size = 100
+  hidden_size = 200
   num_steps = 10 # RNN is unfolded into 'num_steps' time steps for training
-  max_epochs = 30 # the number of max epoch
-  early_stopping = 7
+  max_epochs = 20 # the number of max epoch
+  early_stopping = 2
   dropout = 0.1
-  lr = 0.1
+  lr = 0.01
   vocab_size= 0
   ### END YOUR CODE
 
@@ -44,12 +44,12 @@ class RNNLM_Model(nn.Module):
     ### Define the Embedding layer. Hint: check nn.Embedding
     self.embedding = nn.Embedding(config.vocab_size, config.embed_size)
     ### Define the H, I, b1 in HW4. Hint: check nn.Parameter
-    self.H = nn.Parameter(torch.Tensor(config.hidden_size, config.hidden_size).cuda())
-    self.I = nn.Parameter(torch.Tensor(config.embed_size, config.hidden_size).cuda())
-    self.b1 = nn.Parameter(torch.Tensor(config.hidden_size).cuda())
+    self.H = nn.Parameter(torch.Tensor(config.hidden_size, config.hidden_size))
+    self.I = nn.Parameter(torch.Tensor(config.embed_size, config.hidden_size))
+    self.b1 = nn.Parameter(torch.Tensor(config.hidden_size))
     ### Define the projection layer, U, b2 in HW4
-    self.U = nn.Parameter(torch.Tensor(config.hidden_size, config.vocab_size).cuda())
-    self.b2 = nn.Parameter(torch.Tensor(config.vocab_size).cuda())
+    self.U = nn.Parameter(torch.Tensor(config.hidden_size, config.vocab_size))
+    self.b2 = nn.Parameter(torch.Tensor(config.vocab_size))
     ## Define the input dropout and output dropout.
     self.input_drop = nn.Dropout(config.dropout)
     self.output_drop = nn.Dropout(config.dropout)
@@ -86,14 +86,10 @@ class RNNLM_Model(nn.Module):
               a tensor of shape (batch_size, embed_size).
     """
     ### YOUR CODE HERE
-    curr_step = 0
     embed_mat = []
     for i in range(self.config.num_steps):
-      extract_vec_step = input_x[:,curr_step]
-      result_vec_step = torch.empty(size=(self.config.batch_size,self.config.embed_size)).cuda()
-      for j in range(self.config.batch_size):
-        result_vec_step[j] = self.embedding(extract_vec_step[i])
-      embed_mat.append(result_vec_step)
+      embed_res = self.embedding(input_x.T[i])
+      embed_mat.append(embed_res)
     input_x = embed_mat
     ### END YOUR CODE
     return input_x
@@ -120,15 +116,16 @@ class RNNLM_Model(nn.Module):
                The final state in this batch, defined as the final_state
     """
     input_x = [self.input_drop(x) for x in input_x]
+    ### YOUR CODE HERE
     curr_state = initial_state
     rnn_outputs = []
-    ### YOUR CODE HERE
     for i in range(self.config.num_steps):
       curr_state = torch.sigmoid(torch.mm(curr_state,self.H)+torch.mm(input_x[i],self.I)+self.b1)
       rnn_outputs.append(curr_state)
-    ### END YOUR CODE
     rnn_outputs = [self.output_drop(x) for x in rnn_outputs]
-    final_state = self.output_drop(curr_state)
+    final_state = curr_state
+    ### END YOUR CODE
+
     return rnn_outputs, final_state
 
 
@@ -147,10 +144,8 @@ class RNNLM_Model(nn.Module):
     """
     ### YOUR CODE HERE
     outputs = []
-    rnn_outputs = [x.cuda() for x in rnn_outputs]
     for i in range(self.config.num_steps):
-      output = torch.mm(rnn_outputs[i],self.U + self.b2)
-      output = torch.nn.functional.softmax(output)
+      output = torch.mm(rnn_outputs[i],self.U) + self.b2
       outputs.append(output)
     ### END YOUR CODE
     return outputs
@@ -250,8 +245,8 @@ def compute_loss(outputs, y, criterion):
     output: A 0-d tensor--averaged loss (scalar)
   """ 
   ### YOUR CODE HERE
-  outputs = torch.concat(outputs,dim=0)
-  y = y.view(-1)
+  outputs = torch.cat(outputs,dim=0)
+  y = y.T.flatten()
   loss = criterion(outputs,y)
   ### END YOUR CODE
   return loss
@@ -287,6 +282,10 @@ def run_epoch(our_model, config, model_optimizer, criterion, data, mode='train',
       if verbose and step % verbose == 0:
         sys.stdout.write('\r{} / {} : pp = {}'.format(step, total_steps, np.exp(np.mean(total_loss))))
         sys.stdout.flush()
+  total_l = 0
+  for loss in total_loss:
+    total_l += loss
+  #print("Total Loss:",total_l)
   if verbose:
       sys.stdout.write('\r')
   return np.exp(np.mean(total_loss))      
@@ -297,6 +296,7 @@ def test_RNNLM():
   ### load data
   train_data, valid_data, test_data, vocab= load_data(debug=False)
   config.vocab_size= len(vocab)
+  print("Model being trainined on following hyperparams: lr:",i,"batch_size:",j,"hidden_size:",k)
   ### Initialize the model. If you are using cpu, do not attach model to cuda.  
   our_model = RNNLM_Model(config)
   our_model.cuda()
@@ -311,7 +311,7 @@ def test_RNNLM():
 
   best_val_pp = float('inf')
   best_val_epoch = 0
-  
+        
   for epoch in range(config.max_epochs):
     print('Epoch {}'.format(epoch))
     start = time.time()
@@ -327,7 +327,7 @@ def test_RNNLM():
     if epoch - best_val_epoch > config.early_stopping:
       break
     print('Total time: {}'.format(time.time() - start))
-    
+          
   ## After training, we load the model and test it.  
   checkpoint = torch.load('./ckpt.pth')
   our_model.load_state_dict(checkpoint['net'])
@@ -342,11 +342,11 @@ def test_RNNLM():
   gen_model = RNNLM_Model(gen_config)
   gen_model.cuda()
   gen_model.load_state_dict(checkpoint['net'])
-  starting_text = 'in palo alto'
+  starting_text = 'aftermath of the natural disaster'
   while starting_text:
     print(' '.join(generate_sentence(
        gen_model, gen_config,vocab, starting_text=starting_text, temp=1.0)))
-    starting_text = 'in palo alto'
+    starting_text = 'aftermath of the natural disaster'
 
 if __name__ == "__main__":
   os.environ['CUDA_VISIBLE_DEVICES'] = '0'
